@@ -8,6 +8,10 @@ import io.scif.config.SCIFIOConfig.ImgMode
 import io.scif.img.ImgIOException
 import io.scif.img.ImgOpener
 
+import ij.ImageJ
+import ij.ImagePlus
+import ij.io.Opener
+
 object ReadTiff {
 
 }
