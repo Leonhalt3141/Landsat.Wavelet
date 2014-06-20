@@ -1,0 +1,1 @@
+/Users/ken/workspace/git/Landsat.Wavelet/C++/CMakeFiles/dspimg.dir
