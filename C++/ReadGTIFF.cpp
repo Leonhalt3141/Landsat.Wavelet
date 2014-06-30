@@ -27,7 +27,7 @@
 #include "geovalues.h"
 
 #define ANULL 0
-#define PI 3.14159265359;
+#define PI 3.14159265359
 
 using namespace std;
 
@@ -71,8 +71,6 @@ struct GeoInfo {
     double UpperLeft_Y;
     double UpperRight_X;
     double UpperRight_Y;
-    double UpperLeft_X;
-    double UpperLeft_Y;
     double LowerLeft_X;
     double LowerLeft_Y;
     double LowerRight_X;
@@ -89,10 +87,10 @@ struct SRP_S {
     double SUN_DIS_S;
 }SolarRadPara;
 
-void GetMLTInfo(string filepath, int band_num){
+void GetMLTInfo(const char *filepath, int band_num){
     double LMIN, LMAX;
     double QCALMIN, QCALMAX;
-    double SUN_AZI; SUN_ELE, SUN_DIS;
+    double SUN_AZI, SUN_ELE, SUN_DIS;
     
     int check;
     int dummy;
@@ -101,9 +99,6 @@ void GetMLTInfo(string filepath, int band_num){
     int DOY;
     int Month, Day;
     
-    ostringstream sout;
-    sout << band_num;
-    string BNUM = sout.str();
     
     std::ifstream ifs(filepath);
     std::string str;
@@ -113,14 +108,6 @@ void GetMLTInfo(string filepath, int band_num){
     string BN = sout.str();
     
     std::string target;
-    
-    std::ifstream ifs(filepath);
-    std::string str;
-    
-    if ( !ifs ){
-        cout << "Error:Input data file not found" << endl;
-        return EXIT_FAILURE;
-    }
     
     while ( getline( ifs, str) ){
         target = "    RADIANCE_MAXIMUM_BAND_" + BN;
@@ -135,7 +122,7 @@ void GetMLTInfo(string filepath, int band_num){
         check = str.compare(0, 27, target);
         if ( check == 0 ){
             vector<string> substrs = split(str, '=');
-            vector<string> subst = split(substrs[1]), ' ');
+            vector<string> subst = split(substrs[1], ' ');
             istringstream sin(subst[1]);
             sin >> LMIN;
         }
@@ -187,7 +174,7 @@ void GetMLTInfo(string filepath, int band_num){
         check = str.compare(0, 22, target);
         if ( check == 0 ){
             vector<string> substrs = split(str, '=');
-            vector<string> subst = split(substrs[1]);
+            vector<string> subst = split(substrs[1], ' ');
             istringstream sin(subst[1]);
             sin >> SUN_DIS;
             dummy = 1;
@@ -230,36 +217,12 @@ void GetMLTInfo(string filepath, int band_num){
     SolarRadPara.SUN_AZI_S = SUN_AZI;
     SolarRadPara.SUN_ELE_S = SUN_ELE;
     SolarRadPara.SUN_DIS_S = SUN_DIS;
-    //return SolarRadPara;
-}
-
-void *ScanTiff(TIFF *pTif){
-    int width, height;
-    int row, col;
-    
-    uint8 *buf, *line;
-    
-    TIFFGetField(pTif, TIFFTAG_IMAGEWIDTH, &width);
-    TIFFGetField(pTif, TIFFTAG_IMAGELENGTH, &height);
-    
-    line = (unit8*) _TIFFmalloc(TIFFScanlineSize(pTif));
-    buf = (uint8*) malloc(width * height * sizeof(uint8));
-    
-    for (row = 0; row < height; row++){
-        TIFFReadScanline(pTif, line, row, 0);
-        for (col = 0; col < width; col++){
-            buf[width * row + col] = line[col];
-        }
-    }
-    return buf;
-    free(buf);
-    _TIFFfree(line);
 }
 
 void GetGeoInfo(TIFF *pTif){
     double UL_X, UL_Y, UR_X, UR_Y, LL_X, LL_Y, LR_X, LR_Y;
-    double ResoX, ResoY;
-    double *pdReso = NULL, *pdTile = NULL;
+    double dResoX, dResoY;
+    double *pdReso = NULL, *pdTie = NULL;
     
     int width, height;
     int iCount;
@@ -271,8 +234,8 @@ void GetGeoInfo(TIFF *pTif){
          TIFFGetField( pTif, GTIFF_TIEPOINTS, &iCount, &pdTie ) == 1 &&
          TIFFGetField( pTif, TIFFTAG_BITSPERSAMPLE, &depth) == 1 &&
          TIFFGetField( pTif, TIFFTAG_IMAGEWIDTH, &width) == 1 &&
-         TIFFGetField( pTif, TIFFTAG_IMAGELENGTH, &length) == 1 &&
-         TIFFGetField( pTif, TIFFTAG_ROWSPERSTRIP, &RowsPerStrip, )) {
+         TIFFGetField( pTif, TIFFTAG_IMAGELENGTH, &height) == 1 &&
+         TIFFGetField( pTif, TIFFTAG_ROWSPERSTRIP, &RowsPerStrip )) {
              dResoX = pdReso[0];
              dResoY = pdReso[1];
              UL_X = pdTie[3] - ( dResoX /2 );
@@ -297,46 +260,20 @@ void GetGeoInfo(TIFF *pTif){
     GeoInfo_t.LowerRight_X = LR_X;
     GeoInfo_t.LowerRight_Y = LR_Y;
     
-    //return GeoInfo_t;
 }
 
-void *ReadTiff(const char *filename ){
-    TIFF *pTif = XTIFFOpen( filename, "r");
-    return TIFF;
-    XTIFFClose( pTif );
-}
-
-void ReadMLTfile(string filepath){
-    double LMIN, LMAX;
-    double QCALMIN, QCALMIN
-    
-    std::ifstream ifs( filepath );
-    std::string str;
-    
-    if ( !ifs ){
-        cout << "Error:Input data file not found" << endl;
-        return EXIT_FAILURE;
-    }
-    
-    while ( getline( ifs, str)){
-        if (int compare(str, 27, ) )
-    }
-    cout >> hoge >> huga >> endl;
-    
-}
-
-void *DN2Radiance(TIFF *pTif){
+double *DN2Radiance(TIFF *pTif){
     int width, height;
-    int row, col;
+    int row, col, X;
     
     double LMIN, LMAX;
     double QCALMIN, QCALMAX;
     
-    SRP_S LandsatPara = GetMLTInfo(MLTfile);
-    LMIN = LandsatPara.LMIN_S;
-    LMAX = LandsatPara.LMAX_S;
-    QCALMIN = LandsatPara.QCALMIN_S;
-    QCALMAX = LandsatPara.QCALMAX_S;
+    //GetMLTInfo(MLTfile, band_num);
+    LMIN = SolarRadPara.LMIN_S;
+    LMAX = SolarRadPara.LMAX_S;
+    QCALMIN = SolarRadPara.QCALMIN_S;
+    QCALMAX = SolarRadPara.QCALMAX_S;
     
     double *L; 
     uint8 *line;
@@ -348,162 +285,343 @@ void *DN2Radiance(TIFF *pTif){
     L = (double*) malloc(width * height * sizeof(double));
     
     for (row = 0; row < height; row++){
-        TIFFReadScanline(pTif, line, row, 0);
+        TIFFReadScanline(pTif, line, row);
         for (col = 0; col < width; col++ ){
-            L[width * row + col] = ((LMAX - LMIN) / (QCALMAX - QCALMIN)) * (line[col] - QCALMIN) + LMIN; 
+            X = (width * row) + col;
+            if(line[col] != ANULL){
+                L[X] = ((LMAX - LMIN) / (QCALMAX - QCALMIN)) * ((double)line[col] - QCALMIN) + LMIN;
+            } else if(line[col] == ANULL){
+                L[X] = ANULL;
+            }
         }
     }
     return L;
 }
 
-void ReturnESUN(int Landsat_num, int band_num){
+double ReturnESUN(int Landsat_num, int band_num){
+    double ESUN;
     if (Landsat_num == 5 ){
         if ( band_num == 1 ){
-            return 1957.0;
+            ESUN = 1957.0;
+            return ESUN;
         }
         if ( band_num == 2 ){
-            return 1826.0;
+            ESUN = 1826.0;
+            return ESUN;
         }
         if ( band_num == 3 ){
-            return 1554.0;
+            ESUN = 1554.0;
+            return ESUN;
         }
         if ( band_num == 4 ){
-            return 1036.0;
+            ESUN = 1036.0;
+            return ESUN;
         }
         if ( band_num == 5 ){
-            return 215.0;
+            ESUN = 215.0;
+            return ESUN;
         }
         if ( band_num == 7 ){
-            return 80.67;
+            ESUN = 80.67;
+            return ESUN;
         }
     }
 }
 
-void *Radiance2Reflectance(double *L, int Landsat_num, int band_num){
+double *Radiance2Reflectance(TIFF *pTif, double *L, int Landsat_num, int band_num){
     int width, height;
     int row, col;
     
-    double ESUN, d, Solar_Zenith;
+    int X;
+    
+    double ESUN, d, ELE, Solar_Zenith;
     
     double *R;
     double *line;
     
+    line = (double*) _TIFFmalloc(TIFFScanlineSize(pTif));
+    
     d = SolarRadPara.SUN_DIS_S;
-    Solar_Zenith = ( 90 - SolarRadPara.SUN_ELE_S);
+    ELE = SolarRadPara.SUN_ELE_S;
+    Solar_Zenith = ( 90.0 - ELE ) * PI / 180.0;
     ESUN = ReturnESUN(Landsat_num, band_num);
     
     TIFFGetField(pTif, TIFFTAG_IMAGEWIDTH, &width);
-    TIFFGetField(pTif, TIFFTAG_IMAGELENGTH, &length);
+    TIFFGetField(pTif, TIFFTAG_IMAGELENGTH, &height);
     
     R = (double*) malloc(width * height * sizeof(double));
     
     for (row = 0; row < height; row++){
-        TIFFReadScanline(pTif, line, row, 0);
         for(col = 0; col < width; col++){
-            R[width * row + col] = PI * L[col] * d * d / ESUN / cos(Solar_Zenith);
+            X = (width * row) + col;
+            if(L[X] != ANULL){
+                R[X] = (L[X] * d * d * PI) / (ESUN * cos(Solar_Zenith));
+            } else if(L[X] == ANULL){
+                R[X] = ANULL;
+            }
         }
     }
     return R;
     
 }
 
-/*
-void SetUpTiffDirectory(TIFF *pTif){
-    
+
+void SetUpTiffDirectory(TIFF *intif, TIFF *outtif){
     int width, height;
     int iCount;
-    
-    width = TIFFGetField( pTif, TIFFTAG_IMAGEWIDTH, &width);
-    height = TIFFGetField( pTif, TIFFTAG_IMAGELENGTH, &length);
-    
-    X = GeoInfo_t.UpperLeft_X + ( dResoX /2 );
-    Y = GeoInfo_t.UpperLeft_Y - ( dResoY /2 );
-    
-    double tiepoints[8] = TIFFGetField( pTif, GTIFF_TIEPOINTS, &iCount, &pdTie);
-    double pixscale[3] = {GeoInfo_t.ResoX, GeoInfo_t.ResoY, 0};
-    
-    
-    TIFFSetFiled(tif, TIFFTAG_IMAGEWIDTH, width);
-    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, height);
-    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-    TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-    TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, GeoInfo_t.Depth);
-    TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, GeoInfo_t.ROWSPERSTRIP);
-    
-    TIFFSetField(tif, TIFFTAG_GEOTIEPOINTS, 8, tiepoints);
-    TIFFSetField(tif, TIFFTAG_GEOPIXELSCALE, 3, pixscale);
-}*/
-
-void *WriteTiff(TIFF *tif, double R){
-  
-  int i;
-  int height;
-  
-  TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &length);
-
-  for(i=0; i< height; i++)
-    if (!TIFFWriteScanline(tif, R, i, 0))
-      TIFFError("WriteImage", "failure in WriteScanline\n");
-}
-
-void SetUpGeoKeys(string inpath, string outpath){
-    int nCount;
+    int nRowsPerSample;
+    int nPhotometric;
+    int nPlan;
+    int depth;
     double *pdList = NULL;
+    double *pdTie = NULL;
+    double *pdReso = NULL;
+    float xres, yres;
+    short orientation;
     
-    TIFF *intif = XTIFFOpen( filepath , "r" );
-    TIFF *outtif = XTIFFOpen( filepath, "w" );
+    short tiepointsize, pixscalesize;
+    double* tiepoints;
+    double* pixscale;
     
-    if ( TIFFGetField( intif, GTIFF_TIEPOINTS, &nCount, &pdList) ){
-        TIFFSetField( outtif, GTIFF_TIEPOINTS, nCount, pdList);
+    width = TIFFGetField( intif, TIFFTAG_IMAGEWIDTH, &width);
+    height = TIFFGetField( intif, TIFFTAG_IMAGELENGTH, &height);
+    
+    /*double tiepoints = TIFFGetField( intif, GTIFF_TIEPOINTS, &iCount, &pdTie);
+    double pixscale[3] = {GeoInfo_t.ResoX, GeoInfo_t.ResoY, 0};*/
+    
+    if ( TIFFGetField( intif, TIFFTAG_IMAGELENGTH, &height) ){
+        TIFFSetField( outtif, TIFFTAG_IMAGELENGTH, height);
     }
-    if ( TIFFGetField( intif, GTIFF_PIXELSCALE, &nCount, &pdList) ){
-        TIFFSetField( outtif, GTIFF_PIXELSCALE, nCount, pdList);
+    if ( TIFFGetField( intif, TIFFTAG_IMAGEWIDTH, &width)){
+        TIFFSetField( outtif, TIFFTAG_IMAGEWIDTH, width);
     }
-    if (TIFFGetField( intif, GTIFF_TRANSMATRIX, &nCount, &pdList) ){
-        TIFFSetField( outtif, GTIFF_TRANSMATRIX, nCount, pdList);
-    } 
-    GTIF *gtif = GTIFNew( intif );
-    
-    gtif->gt_tif = outtif;
-    gtif->gt_flags |= FLAG_FILE_MODIFIED;
-    
-    WriteTiff( outtif, R)
-    
-    GTIFWriteKeys( gtif );
-    GTIFFree( gtif );
-    
-    XTIFFClose( gtif );
-    
-    XTIFFClose( intif );
-    XTIFFClose( outtif );
+    if ( TIFFGetField( intif, TIFFTAG_ORIENTATION, &orientation)){
+        TIFFSetField( outtif, TIFFTAG_ORIENTATION, orientation);
+    }
+    if ( TIFFGetField( intif, TIFFTAG_XRESOLUTION, &xres)){
+        TIFFSetField( outtif, TIFFTAG_XRESOLUTION, xres);
+    }
+    if ( TIFFGetField( intif, TIFFTAG_YRESOLUTION, &yres)){
+        TIFFSetField( outtif, TIFFTAG_YRESOLUTION, yres);
+    }
+    if ( TIFFGetField( intif, TIFFTAG_GEOTIEPOINTS, &tiepointsize, &tiepoints)){
+        TIFFSetField( outtif, TIFFTAG_GEOTIEPOINTS, tiepointsize, tiepoints);
+    }
+    if ( TIFFGetField( intif, TIFFTAG_GEOPIXELSCALE, &pixscalesize, &pixscale)){
+        TIFFSetField( outtif, TIFFTAG_GEOPIXELSCALE, pixscalesize, pixscale);
+    }
+    /*if ( TIFFGetField( intif, TIFFTAG_COMPRESSION, &pdList)){
+        TIFFSetField( outtif, TIFFTAG_COMPRESSION, pdList);
+    }*/
+    if ( TIFFGetField(intif, TIFFTAG_PHOTOMETRIC, &nPhotometric)){
+        TIFFSetField( outtif, TIFFTAG_PHOTOMETRIC, nPhotometric);
+    }
+    if ( TIFFGetField( intif, TIFFTAG_PLANARCONFIG, &nPlan)){
+        TIFFSetField( outtif, TIFFTAG_PLANARCONFIG, nPlan);
+    }
+    if ( TIFFGetField( intif, TIFFTAG_BITSPERSAMPLE, &depth)){
+        //TIFFSetField( outtif, TIFFTAG_COMPRESSION, COMPRESSION_DEFLATE);
+        TIFFSetField( outtif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+        TIFFSetField( outtif, TIFFTAG_SAMPLESPERPIXEL, 1);
+        TIFFSetField( outtif, TIFFTAG_BITSPERSAMPLE, 64);
+        TIFFSetField( outtif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
+    }
+    if (TIFFGetField( intif, TIFFTAG_ROWSPERSTRIP, &nRowsPerSample)){
+        TIFFSetField( outtif, TIFFTAG_ROWSPERSTRIP, nRowsPerSample);
+    }
+    if (TIFFGetField( intif, TIFFTAG_GEOTIEPOINTS, &iCount, &pdTie)){
+        TIFFSetField( outtif, TIFFTAG_GEOTIEPOINTS, iCount, pdTie);
+    }
+    if (TIFFGetField( intif, TIFFTAG_GEOPIXELSCALE, &iCount, &pdReso)){
+        TIFFSetField( outtif, TIFFTAG_GEOPIXELSCALE, iCount, pdReso);
+    }
 }
 
+void SetUpGeoKeys(GTIF *ingtif, GTIF *outgtif){
+    geocode_t modelTypeCode, rasterModelType;
+    
+    geocode_t geoCDTypeCode, geodeticDatumCode, primeMeridiumCode, linearUnitCode, linearUnitValue, angularUnitCode, angularUnitValue, ellipsoideCode, semiMajorAxis, semiMinorAxis, geoInvertFlattening, angularUnitsCode, primeMeridianLongitude;
+    
+    
+    if ( GTIFKeyGet( ingtif, GTModelTypeGeoKey, &modelTypeCode, 0, 1) ){
+        GTIFKeySet( outgtif, GTModelTypeGeoKey, TYPE_SHORT, 1, modelTypeCode);
+    }
+    if ( GTIFKeyGet( ingtif, GTRasterTypeGeoKey, &rasterModelType, 0, 1) ){
+        GTIFKeySet( outgtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, rasterModelType);
+    }
+    if ( GTIFKeyGet( ingtif, GeographicTypeGeoKey, &geoCDTypeCode, 0, 1) ){
+        GTIFKeySet( outgtif, GeographicTypeGeoKey, TYPE_SHORT, 1, geoCDTypeCode);
+    }
+    if ( GTIFKeyGet( ingtif, GeogGeodeticDatumGeoKey, &geodeticDatumCode, 0, 1)){
+        GTIFKeySet( outgtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, geodeticDatumCode);
+    }
+    if ( GTIFKeyGet( ingtif, GeogPrimeMeridianGeoKey, &primeMeridiumCode, 0, 1)){
+        GTIFKeySet( outgtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, primeMeridiumCode);
+    }
+    if ( GTIFKeyGet( ingtif, GeogLinearUnitsGeoKey, &linearUnitCode, 0, 1)){
+        GTIFKeySet( outgtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, linearUnitCode);
+    }
+    if ( GTIFKeyGet( ingtif, GeogLinearUnitSizeGeoKey, &linearUnitValue, 0, 1)){
+        GTIFKeySet( outgtif, GeogLinearUnitSizeGeoKey, TYPE_SHORT, 1, linearUnitValue);
+    }
+    if ( GTIFKeyGet( ingtif, GeogAngularUnitsGeoKey, &angularUnitCode, 0, 1)){
+        GTIFKeySet( outgtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, angularUnitCode);
+    }
+    if ( GTIFKeyGet( ingtif, GeogAngularUnitSizeGeoKey, &angularUnitValue, 0, 1)){
+        GTIFKeySet(outgtif, GeogAngularUnitSizeGeoKey, TYPE_SHORT, 1, angularUnitValue);
+    }
+    if ( GTIFKeyGet( ingtif, GeogEllipsoidGeoKey, &ellipsoideCode, 0, 1)){
+        GTIFKeySet( outgtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, ellipsoideCode);
+    }
+    if ( GTIFKeyGet( ingtif, GeogSemiMajorAxisGeoKey, &semiMajorAxis, 0, 1)){
+        GTIFKeySet( outgtif, GeogSemiMajorAxisGeoKey, TYPE_SHORT, 1, semiMajorAxis);
+    }
+    if ( GTIFKeyGet( ingtif, GeogSemiMinorAxisGeoKey, &semiMinorAxis, 0, 1)){
+        GTIFKeySet( outgtif, GeogSemiMinorAxisGeoKey, TYPE_SHORT, 1, semiMinorAxis);
+    }
+    if ( GTIFKeyGet( ingtif, GeogInvFlatteningGeoKey, &geoInvertFlattening, 0, 1)){
+        GTIFKeySet( outgtif, GeogInvFlatteningGeoKey, TYPE_SHORT, 1, geoInvertFlattening);
+    }
+    if ( GTIFKeyGet( ingtif, GeogAzimuthUnitsGeoKey, &angularUnitsCode, 0, 1)){
+        GTIFKeySet( outgtif, GeogAzimuthUnitsGeoKey, TYPE_SHORT, 1, angularUnitsCode);
+    }
+    if ( GTIFKeyGet( ingtif, GeogPrimeMeridianLongGeoKey, &primeMeridianLongitude, 0, 1)){
+        GTIFKeySet( outgtif, GeogPrimeMeridianLongGeoKey, TYPE_SHORT, 1, primeMeridianLongitude);
+    }
+    
+      geocode_t projCSSystemCode, ProjCode, projCoordTransfCode, linearUnitsCode, linearUnitSize, projStdParallel1, projStdParallel2,projNatOriginLong,
+	  projNatOriginLat, projFalseEasting, projFalseNorthing,
+projFalseOriginLong, projFalseOriginLat, projFalseOriginEasting, projFalseOriginNorthing, projCenterLong, projCenterLat, projCenterEasting, projCenterNorthing, projScaleAtNatOrigin, projScaleAtCenter, projAzimuthAngle, projStraightVertPoleLong;
+    
+    
+    // Projected CS Parameter Keys
+    if ( GTIFKeyGet( ingtif, ProjectedCSTypeGeoKey, &projCSSystemCode, 0, 1)){
+        GTIFKeySet( outgtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, projCSSystemCode);
+    }
+    if ( GTIFKeyGet( ingtif, ProjectionGeoKey, &ProjCode, 0, 1)){
+        GTIFKeySet( outgtif, ProjectionGeoKey, TYPE_SHORT, 1, ProjCode);
+    }
+    if ( GTIFKeyGet( ingtif, ProjCoordTransGeoKey,  &projCoordTransfCode, 0, 1)){
+        GTIFKeySet( outgtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, projCoordTransfCode);
+    }
+    if ( GTIFKeyGet( ingtif, ProjLinearUnitsGeoKey, &linearUnitsCode, 0, 1)){
+        GTIFKeySet( outgtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, linearUnitsCode);
+    }
+    if ( GTIFKeyGet( ingtif, ProjLinearUnitSizeGeoKey, &linearUnitSize, 0, 1)){
+        GTIFKeySet( outgtif, ProjLinearUnitSizeGeoKey, TYPE_SHORT, 1, linearUnitSize);
+    }
+    if ( GTIFKeyGet( ingtif, ProjStdParallel1GeoKey, &projStdParallel1, 0, 1)){
+        GTIFKeySet( outgtif, ProjStdParallel1GeoKey, TYPE_SHORT, 1, projStdParallel1);
+    }
+    if ( GTIFKeyGet( ingtif, ProjStdParallel2GeoKey, &projStdParallel2, 0, 1)){
+        GTIFKeySet( outgtif, ProjStdParallel2GeoKey, TYPE_SHORT, 1, projStdParallel2);
+    }
+    if ( GTIFKeyGet( ingtif, ProjNatOriginLongGeoKey, &projNatOriginLong, 0, 1)){
+        GTIFKeySet( outgtif, ProjNatOriginLongGeoKey, TYPE_SHORT, 1, projNatOriginLong);
+    }
+    if ( GTIFKeyGet( ingtif, ProjNatOriginLatGeoKey, &projNatOriginLat, 0, 1)){
+        GTIFKeySet( outgtif, ProjNatOriginLatGeoKey, TYPE_SHORT, 1, projNatOriginLat);
+    }
+    if ( GTIFKeyGet( ingtif, ProjFalseEastingGeoKey, &projFalseEasting, 0, 1)){
+        GTIFKeySet( outgtif, ProjFalseEastingGeoKey, TYPE_SHORT, 1, projFalseEasting);
+    }
+    if ( GTIFKeyGet( ingtif, ProjFalseNorthingGeoKey, &projFalseNorthing, 0, 1)){
+        GTIFKeySet( outgtif, ProjFalseNorthingGeoKey, TYPE_SHORT, 1, projFalseNorthing);
+    }
+    if ( GTIFKeyGet( ingtif, ProjFalseOriginLongGeoKey, &projFalseOriginLong, 0, 1)){
+        GTIFKeySet( outgtif, ProjFalseOriginLongGeoKey, TYPE_SHORT, 1, projFalseOriginLong);
+    }
+    if ( GTIFKeyGet( ingtif, ProjFalseOriginLatGeoKey, &projFalseOriginLat, 0, 1)){
+        GTIFKeySet( outgtif, ProjFalseOriginLatGeoKey, TYPE_SHORT, 1, projFalseOriginLat);
+    }
+    if ( GTIFKeyGet( ingtif, ProjFalseOriginEastingGeoKey, &projFalseOriginEasting, 0, 1)){
+        GTIFKeySet( outgtif, ProjFalseEastingGeoKey, TYPE_SHORT, 1, projFalseOriginEasting);
+    }
+    if ( GTIFKeyGet( ingtif, ProjFalseOriginNorthingGeoKey, &projFalseOriginNorthing, 0, 1)){
+        GTIFKeySet( outgtif, ProjFalseNorthingGeoKey, TYPE_SHORT, 1, projFalseOriginNorthing);
+    }
+    if ( GTIFKeyGet( ingtif, ProjCenterLongGeoKey, &projCenterLong, 0, 1)){
+        GTIFKeySet( outgtif, ProjCenterLongGeoKey, TYPE_SHORT, 1, projCenterLong);
+    }
+    if ( GTIFKeyGet( ingtif, ProjCenterLatGeoKey, &projCenterLat, 0, 1)){
+        GTIFKeySet( outgtif, ProjCenterLatGeoKey, TYPE_SHORT, 1, projCenterLat);
+    }
+    if ( GTIFKeyGet( ingtif, ProjCenterEastingGeoKey, & projCenterEasting, 0, 1)){
+        GTIFKeySet( outgtif, ProjCenterEastingGeoKey, TYPE_SHORT, 1, projCenterEasting);
+    }
+    if ( GTIFKeyGet( ingtif, ProjCenterNorthingGeoKey, &projCenterNorthing, 0, 1)){
+        GTIFKeySet( outgtif, ProjCenterNorthingGeoKey, TYPE_SHORT, 1, projCenterNorthing);
+    }
+    if ( GTIFKeyGet( ingtif, ProjScaleAtNatOriginGeoKey, &projScaleAtNatOrigin, 0, 1)){
+        GTIFKeySet( outgtif, ProjScaleAtNatOriginGeoKey, TYPE_SHORT, 1, projScaleAtNatOrigin);
+    }
+    if ( GTIFKeyGet( ingtif, ProjScaleAtCenterGeoKey, &projScaleAtCenter, 0,1)){
+        GTIFKeySet( outgtif, ProjScaleAtNatOriginGeoKey, TYPE_SHORT, 1, projScaleAtCenter);
+    }
+    if ( GTIFKeyGet( ingtif, ProjAzimuthAngleGeoKey, &projAzimuthAngle, 0, 1)){
+        GTIFKeySet( outgtif, ProjAzimuthAngleGeoKey, TYPE_SHORT, 1, projAzimuthAngle);
+    }
+    if ( GTIFKeyGet( ingtif, ProjStraightVertPoleLongGeoKey, &projStraightVertPoleLong, 0, 1)){
+        GTIFKeySet( outgtif, ProjStraightVertPoleLongGeoKey, TYPE_SHORT, 1, ProjStraightVertPoleLongGeoKey);
+    }
+}
+
+void *WriteTiff(TIFF *pTif, TIFF *oTif, double *R){
+  
+  int row, col, X;
+  int height;
+  int width;
+  
+  double *RLine;
+  
+  TIFFGetField(pTif, TIFFTAG_IMAGELENGTH, &height);
+  TIFFGetField(pTif, TIFFTAG_IMAGEWIDTH, &width);
+  RLine = (double*) malloc(width * sizeof(double));
+  for(row=0; row < height; row++){
+    for(col=0; col < width; col++){
+        X = (width * row) + col;
+        RLine[col] = R[X];
+    }
+    if (!TIFFWriteScanline(oTif, RLine, row, 0))
+      TIFFError("WriteImage", "failure in WriteScanline\n");
+  }
+}
 
 int main(void){
-    //TIFF *landsatimage;
     
-    //landsatimage = ReadTiff("/Users/ken/workspace/Landsat/LT51070352000049HAJ00/LT51070352000049HAJ00_B1.TIF");
-    std::string filepath;
-    filepath = "/Users/ken/workspace/Landsat/LT51070352000049HAJ00/LT51070352000049HAJ00_B1.TIF";
+    const char *filepath = "/Users/ken/workspace/Landsat/LT51070352000049HAJ00/LT51070352000049HAJ00_B1.TIF";
     
-    std::string outpath;
-    outpath = "/Users/ken/workspace/Landsat/LT51070352000049HAJ00/test.TIF"
+    const char *mltfilepath = "/Users/ken/workspace/Landsat/LT51070352000049HAJ00/LT51070352000049HAJ00_MTL.txt";
     
-    std::int band_num;
+    const char *outpath = "/Users/ken/workspace/Landsat/LT51070352000049HAJ00/test.TIF";
+    
+    int band_num;
     band_num = 1;
-    std::int Landsat_num;
+    int Landsat_num;
     Landsat_num = 5;
     
-    double L;
-    double R;
+    double *L;
+    double *R;
     
-    GetMLTInfo(filepath, band_num);
+    TIFF *pTif, *oTif;
+    GTIF *pGTif, *oGTif;
     
+    GetMLTInfo(mltfilepath, band_num);
+    
+    pTif = XTIFFOpen(filepath, "r");
+    oTif = XTIFFOpen(outpath, "w");
+    
+    pGTif = GTIFNew( pTif );
+    oGTif = GTIFNew( oTif );
     L = DN2Radiance(pTif);
-    
-    R = Radiance2Reflectance(L, Landsat_num, band_num);
-    
-    SetUpGeoKeys(filepath, outpath);
+    R = Radiance2Reflectance(pTif, L, Landsat_num, band_num);
+    SetUpTiffDirectory(pTif, oTif);
+    SetUpGeoKeys(pGTif, oGTif);
+    WriteTiff(pTif, oTif, R);
+    GTIFWriteKeys(oGTif);
+    GTIFFree(pGTif);
+    GTIFFree(oGTif);
+    XTIFFClose(pTif);
+    XTIFFClose(oTif);
     
 }
