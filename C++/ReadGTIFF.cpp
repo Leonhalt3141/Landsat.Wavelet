@@ -13,11 +13,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "opencv2/core/core.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/nonfree/nonfree.hpp"
-
 #include "geotiff.h"
 #include "geo_normalize.h"
 #include "geo_tiffp.h"
@@ -134,7 +129,7 @@ void GetMLTInfo(const char *filepath, int band_num){
             istringstream sin(subst[1]);
             sin >> QCALMAX;
         }
-        target = "    QUANTIZE_CAL_MIN_BAND_1" + BN;
+        target = "    QUANTIZE_CAL_MIN_BAND_" + BN;
         check = str.compare(0, 27, target);
         if ( check == 0 ){
             vector<string> substrs = split(str, '=');
