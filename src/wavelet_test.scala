@@ -1,5 +1,0 @@
-
-
-object wavelet_test {
-
-}

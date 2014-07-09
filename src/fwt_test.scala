@@ -40,7 +40,7 @@ object fwt_test {
     
     println("Input Signal")
     for(i <- 0 to L-1){
-      printf("%7.4f", s0(i))
+      printf("%7.4f  ", s0(i))
     }
     print("\n")
     
@@ -52,7 +52,7 @@ object fwt_test {
     
     println("Reconstractred Signal")
     for(i <-  0 to L-1){
-      printf("%7.4f", s0r(i))
+      printf("%7.4f  ", s0r(i))
     }
   }
 
